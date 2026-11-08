@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -52,6 +53,18 @@ def stop(process):
         process.wait()
 
 
+def remove_tree(path, timeout=10):
+    # Windows can retain a terminated child's inherited log handle briefly.
+    deadline = time.monotonic() + timeout
+    while path.exists():
+        try:
+            shutil.rmtree(path)
+        except PermissionError:
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(0.1)
+
+
 def check_service(module, scratch, env):
     log_path = scratch / (module.split(".")[0] + ".log")
     # Port zero lets the OS allocate an unused loopback port without a bind race.
@@ -94,8 +107,8 @@ def main():
     if not PYTHON.is_file() or not os.path.samefile(sys.executable, PYTHON):
         raise SystemExit(f"Run this smoke with {PYTHON}")
     # Keep even temporary files inside the workspace; delete them on every exit.
-    with tempfile.TemporaryDirectory(prefix="aegis-health-", dir=APP / "tests") as directory:
-        scratch = Path(directory)
+    scratch = Path(tempfile.mkdtemp(prefix="aegis-health-", dir=APP / "tests"))
+    try:
         database = scratch / "audit.db"
         # /health only selects id. No audit service or ingestion is needed.
         connection = sqlite3.connect(database)
@@ -109,6 +122,8 @@ def main():
         for module in ("agent.main:app", "reconstruction.main:app"):
             check_service(module, scratch, env)
         assert database.read_bytes() == before, "health checks changed the database"
+    finally:
+        remove_tree(scratch)
     assert not scratch.exists(), "smoke temporary directory was not removed"
     print("PASS both processes stopped; temporary files removed; database unchanged")
 
