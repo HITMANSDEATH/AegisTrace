@@ -1,0 +1,115 @@
+{
+  "part1_normal_sink": [
+    {
+      "burst_size": 100,
+      "enqueued_count": 100,
+      "dropped_count": 0,
+      "drop_rate": 0.0,
+      "max_queue_depth_seen": 100,
+      "submit_time_ms": 0.249,
+      "submit_latency_per_event_us": 2.49,
+      "drain_time_sec": 1.012,
+      "caller_blocked": false,
+      "actual_db_entries": 100,
+      "chain_intact": true
+    },
+    {
+      "burst_size": 512,
+      "enqueued_count": 512,
+      "dropped_count": 0,
+      "drop_rate": 0.0,
+      "max_queue_depth_seen": 511,
+      "submit_time_ms": 8.441,
+      "submit_latency_per_event_us": 16.49,
+      "drain_time_sec": 4.862,
+      "caller_blocked": false,
+      "actual_db_entries": 512,
+      "chain_intact": true
+    },
+    {
+      "burst_size": 513,
+      "enqueued_count": 512,
+      "dropped_count": 1,
+      "drop_rate": 0.001949317738791423,
+      "max_queue_depth_seen": 512,
+      "submit_time_ms": 5.162,
+      "submit_latency_per_event_us": 10.06,
+      "drain_time_sec": 4.869,
+      "caller_blocked": false,
+      "actual_db_entries": 512,
+      "chain_intact": true
+    },
+    {
+      "burst_size": 1000,
+      "enqueued_count": 512,
+      "dropped_count": 488,
+      "drop_rate": 0.488,
+      "max_queue_depth_seen": 512,
+      "submit_time_ms": 3.704,
+      "submit_latency_per_event_us": 3.7,
+      "drain_time_sec": 4.817,
+      "caller_blocked": false,
+      "actual_db_entries": 512,
+      "chain_intact": true
+    }
+  ],
+  "part2_paused_sink": [
+    {
+      "burst_size": 100,
+      "enqueued_count": 100,
+      "dropped_count": 0,
+      "drop_rate": 0.0,
+      "queue_maxsize": 512,
+      "received_by_sink_count": 100,
+      "submit_time_ms": 0.244,
+      "median_event_call_us": 1.5,
+      "p95_event_call_us": 2.99,
+      "caller_blocked": false
+    },
+    {
+      "burst_size": 512,
+      "enqueued_count": 512,
+      "dropped_count": 0,
+      "drop_rate": 0.0,
+      "queue_maxsize": 512,
+      "received_by_sink_count": 512,
+      "submit_time_ms": 3.394,
+      "median_event_call_us": 1.18,
+      "p95_event_call_us": 1.5,
+      "caller_blocked": false
+    },
+    {
+      "burst_size": 513,
+      "enqueued_count": 512,
+      "dropped_count": 1,
+      "drop_rate": 0.001949317738791423,
+      "queue_maxsize": 512,
+      "received_by_sink_count": 512,
+      "submit_time_ms": 0.715,
+      "median_event_call_us": 1.02,
+      "p95_event_call_us": 1.79,
+      "caller_blocked": false
+    },
+    {
+      "burst_size": 1000,
+      "enqueued_count": 512,
+      "dropped_count": 488,
+      "drop_rate": 0.488,
+      "queue_maxsize": 512,
+      "received_by_sink_count": 512,
+      "submit_time_ms": 1.367,
+      "median_event_call_us": 1.14,
+      "p95_event_call_us": 1.49,
+      "caller_blocked": false
+    }
+  ],
+  "part3_saturated_agent_turn": {
+    "queue_was_full": true,
+    "chat_status_code": 200,
+    "agent_succeeded": true,
+    "chat_latency_ms": 4.629,
+    "agent_turn_id": "turn-364efa5088fa4fb4b5e68c758c2147a7",
+    "error_leaked_to_client": false,
+    "behavior": "Agent turn succeeded with normal latency; audit events silently dropped via fail-open non-blocking queue.Full catch"
+  }
+}

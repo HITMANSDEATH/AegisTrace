@@ -1,0 +1,5 @@
+burst_size,enqueued_count,dropped_count,drop_rate,max_queue_depth_seen,submit_time_ms,submit_latency_per_event_us,drain_time_sec,caller_blocked,actual_db_entries,chain_intact
+100,100,0,0.0,100,0.249,2.49,1.012,False,100,True
+512,512,0,0.0,511,8.441,16.49,4.862,False,512,True
+513,512,1,0.001949317738791423,512,5.162,10.06,4.869,False,512,True
+1000,512,488,0.488,512,3.704,3.7,4.817,False,512,True

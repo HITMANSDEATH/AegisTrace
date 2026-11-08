@@ -1,0 +1,68 @@
+name: Offline tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONNOUSERSITE: '1'
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTHONPATH: ${{ github.workspace }}/aegistrace-complete/aegistrace
+      DB_PATH: ${{ runner.temp }}/aegis-ci/audit.db
+      ANCHOR_DATA_DIR: ${{ runner.temp }}/aegis-ci/anchors
+      ANCHOR_EVERY: '0'
+      AEGIS_ALLOW_DESTRUCTIVE: '0'
+      DEMO_MODE: 'false'
+      ALLOWED_ORIGINS: 'http://127.0.0.1'
+      AEGIS_API_BASE: ''
+      LLM_PROVIDER: groq
+      GROQ_API_KEY: ''
+      OPENAI_API_KEY: ''
+      LANGCHAIN_TRACING_V2: 'false'
+      LANGSMITH_TRACING: 'false'
+      AUDIT_WRITE_TOKEN: 'ci-synthetic-only'
+      ANCHOR_WRITE_TOKEN: 'ci-synthetic-only'
+      AUDIT_SINK_URL: 'http://127.0.0.1:1/ingest'
+      ANCHOR_SINK_URL: 'http://127.0.0.1:1/anchor'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # Native uv bootstraps the venv without executing another Python command.
+      # All Python commands below use only the root .venv/Scripts/python.exe.
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+      - name: Create root Python environment
+        run: uv venv --python 3.13 --seed "$GITHUB_WORKSPACE/.venv"
+      - name: Install declared development requirements only
+        run: '"$GITHUB_WORKSPACE/.venv/Scripts/python.exe" -m pip install -r "$GITHUB_WORKSPACE/aegistrace-complete/aegistrace/requirements-dev.txt"'
+      - name: Application unit tests (no Docker or browser experiments)
+        run: '"$GITHUB_WORKSPACE/.venv/Scripts/python.exe" -m pytest -q -p no:cacheprovider "$GITHUB_WORKSPACE/aegistrace-complete/aegistrace/tests"'
+      - name: Offline benchmark guard tests only
+        # Never collect the benchmark root: it contains live experiment scripts.
+        run: '"$GITHUB_WORKSPACE/.venv/Scripts/python.exe" -m pytest -q -p no:cacheprovider "$GITHUB_WORKSPACE/benchmarks/tests"'
+      - name: JavaScript syntax
+        run: |
+          for file in "$GITHUB_WORKSPACE"/aegistrace-complete/aegistrace/frontend/*.js "$GITHUB_WORKSPACE"/aegistrace-complete/aegistrace/scripts/*.mjs "$GITHUB_WORKSPACE"/aegistrace-complete/aegistrace/tests/*.mjs; do
+            node --check "$file"
+          done
+      - name: Mocked frontend API tests
+        run: node --test "$GITHUB_WORKSPACE/aegistrace-complete/aegistrace/tests/frontend_api.test.mjs"
+      - name: Real-process loopback health smoke
+        run: '"$GITHUB_WORKSPACE/.venv/Scripts/python.exe" "$GITHUB_WORKSPACE/aegistrace-complete/aegistrace/tests/health_smoke.py"'

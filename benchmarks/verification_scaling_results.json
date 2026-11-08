@@ -1,0 +1,22 @@
+[
+  {
+    "entry_count": 10,
+    "server_duration_ms": 0.14,
+    "http_roundtrip_ms": 2.59
+  },
+  {
+    "entry_count": 100,
+    "server_duration_ms": 0.91,
+    "http_roundtrip_ms": 4.41
+  },
+  {
+    "entry_count": 1000,
+    "server_duration_ms": 7.62,
+    "http_roundtrip_ms": 20.42
+  },
+  {
+    "entry_count": 10000,
+    "server_duration_ms": 108.1,
+    "http_roundtrip_ms": 248.36
+  }
+]

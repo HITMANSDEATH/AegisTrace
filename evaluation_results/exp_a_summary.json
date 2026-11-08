@@ -1,0 +1,85 @@
+{
+  "random_seed": 1337,
+  "clean_control": {
+    "total_sessions": 30,
+    "false_positives": 0,
+    "false_positive_rate": 0.0,
+    "latency_p50": 2.9439,
+    "latency_p95": 4.1747,
+    "latency_mean": 4.167776666666667
+  },
+  "mutation_conditions": {
+    "A1_two_payload": {
+      "total_sessions": 30,
+      "detected_count": 30,
+      "detection_rate": 1.0,
+      "first_broken_matched_count": 30,
+      "first_broken_match_rate": 1.0,
+      "all_broken_matched_count": 30,
+      "all_broken_match_rate": 1.0,
+      "latency_p50": 3.0451,
+      "latency_p95": 3.7395,
+      "latency_mean": 3.1390766666666665
+    },
+    "A2_five_payload": {
+      "total_sessions": 30,
+      "detected_count": 30,
+      "detection_rate": 1.0,
+      "first_broken_matched_count": 30,
+      "first_broken_match_rate": 1.0,
+      "all_broken_matched_count": 30,
+      "all_broken_match_rate": 1.0,
+      "latency_p50": 3.0707,
+      "latency_p95": 3.7444,
+      "latency_mean": 3.0766833333333334
+    },
+    "A3_payload_plus_timestamp": {
+      "total_sessions": 30,
+      "detected_count": 30,
+      "detection_rate": 1.0,
+      "first_broken_matched_count": 30,
+      "first_broken_match_rate": 1.0,
+      "all_broken_matched_count": 30,
+      "all_broken_match_rate": 1.0,
+      "latency_p50": 3.0081,
+      "latency_p95": 3.4201,
+      "latency_mean": 3.0170166666666662
+    },
+    "A4_payload_plus_metadata": {
+      "total_sessions": 30,
+      "detected_count": 30,
+      "detection_rate": 1.0,
+      "first_broken_matched_count": 30,
+      "first_broken_match_rate": 1.0,
+      "all_broken_matched_count": 30,
+      "all_broken_match_rate": 1.0,
+      "latency_p50": 2.933,
+      "latency_p95": 6.914,
+      "latency_mean": 3.2228566666666665
+    },
+    "A5_adjacent_mutations": {
+      "total_sessions": 30,
+      "detected_count": 30,
+      "detection_rate": 1.0,
+      "first_broken_matched_count": 30,
+      "first_broken_match_rate": 1.0,
+      "all_broken_matched_count": 30,
+      "all_broken_match_rate": 1.0,
+      "latency_p50": 3.1451,
+      "latency_p95": 4.2557,
+      "latency_mean": 3.2249866666666667
+    },
+    "A6_non_adjacent_mutations": {
+      "total_sessions": 30,
+      "detected_count": 30,
+      "detection_rate": 1.0,
+      "first_broken_matched_count": 30,
+      "first_broken_match_rate": 1.0,
+      "all_broken_matched_count": 30,
+      "all_broken_match_rate": 1.0,
+      "latency_p50": 3.0761,
+      "latency_p95": 3.6642,
+      "latency_mean": 3.1180533333333336
+    }
+  }
+}

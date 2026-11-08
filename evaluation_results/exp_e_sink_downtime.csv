@@ -1,0 +1,12 @@
+turn,phase,status,latency_ms,events_stored_in_db
+1,pre_outage,200,4.547,True
+2,pre_outage,200,1.712,True
+3,pre_outage,200,1.866,True
+4,during_outage,200,4.542,False
+5,during_outage,200,2.351,False
+6,during_outage,200,2.956,False
+7,during_outage,200,2.648,False
+8,during_outage,200,2.836,False
+9,post_outage,200,8.054,True
+10,post_outage,200,8.765,True
+11,post_outage,200,5.279,True

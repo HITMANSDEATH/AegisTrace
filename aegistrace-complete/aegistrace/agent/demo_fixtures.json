@@ -1,0 +1,196 @@
+{
+  "verified": [
+    {
+      "type": "state_transition",
+      "label": "Access alert received",
+      "timestamp": "2026-09-10T00:14:02.000Z",
+      "payload": {
+        "message": "Investigate 18 failed sign-ins to the finance account after midnight.",
+        "actor": "analyst",
+        "source": "fictional walkthrough"
+      },
+      "parent_ids": []
+    },
+    {
+      "type": "retrieval",
+      "label": "Access policy",
+      "timestamp": "2026-09-10T00:14:03.000Z",
+      "payload": {
+        "message": "Policy: escalate unusual access to privileged finance accounts.",
+        "document": "access-policy-demo.md",
+        "chunk": 1
+      },
+      "parent_ids": [
+        "evt-001"
+      ]
+    },
+    {
+      "type": "tool_start",
+      "label": "Lookup access logs",
+      "timestamp": "2026-09-10T00:14:04.000Z",
+      "payload": {
+        "message": "Read-only lookup of recent authentication events.",
+        "tool": "lookup_access_logs",
+        "access": "read_only",
+        "simulated": true
+      },
+      "parent_ids": [
+        "evt-001",
+        "evt-002"
+      ]
+    },
+    {
+      "type": "tool_end",
+      "label": "Access records returned",
+      "timestamp": "2026-09-10T00:14:05.000Z",
+      "payload": {
+        "message": "18 failed sign-ins, followed by one success from an unfamiliar address.",
+        "failures": 18,
+        "successful_sign_ins": 1,
+        "source_ip": "203.0.113.42",
+        "simulated": true
+      },
+      "parent_ids": [
+        "evt-003"
+      ]
+    },
+    {
+      "type": "retrieval",
+      "label": "Identity baseline",
+      "timestamp": "2026-09-10T00:14:06.000Z",
+      "payload": {
+        "message": "The address is outside the account’s usual access pattern.",
+        "document": "identity-baseline-demo.json",
+        "chunk": 2
+      },
+      "parent_ids": [
+        "evt-004"
+      ]
+    },
+    {
+      "type": "state_transition",
+      "label": "Assess the evidence",
+      "timestamp": "2026-09-10T00:14:07.000Z",
+      "payload": {
+        "message": "Repeated failures and a new source warrant analyst review.",
+        "state": "assessment",
+        "simulated": true
+      },
+      "parent_ids": [
+        "evt-002",
+        "evt-004",
+        "evt-005"
+      ]
+    },
+    {
+      "type": "state_transition",
+      "label": "Escalate to an analyst",
+      "timestamp": "2026-09-10T00:14:08.000Z",
+      "payload": {
+        "message": "Scripted outcome: escalate the access alert. No account changes made.",
+        "state": "complete",
+        "simulated": true
+      },
+      "parent_ids": [
+        "evt-006"
+      ]
+    }
+  ],
+  "tampered": [
+    {
+      "type": "state_transition",
+      "label": "Open financial review",
+      "timestamp": "2026-09-10T00:14:02.000Z",
+      "payload": {
+        "message": "Review expense EXP-2048 against the approval policy.",
+        "actor": "analyst",
+        "source": "fictional walkthrough"
+      },
+      "parent_ids": []
+    },
+    {
+      "type": "retrieval",
+      "label": "Approval policy",
+      "timestamp": "2026-09-10T00:14:03.000Z",
+      "payload": {
+        "message": "Policy: expenses above $5,000 require a second approver.",
+        "document": "expense-policy-demo.md",
+        "chunk": 1
+      },
+      "parent_ids": [
+        "evt-001"
+      ]
+    },
+    {
+      "type": "tool_start",
+      "label": "Query expense ledger",
+      "timestamp": "2026-09-10T00:14:04.000Z",
+      "payload": {
+        "message": "Read-only lookup of EXP-2048.",
+        "tool": "query_expense_ledger",
+        "access": "read_only",
+        "simulated": true
+      },
+      "parent_ids": [
+        "evt-001",
+        "evt-002"
+      ]
+    },
+    {
+      "type": "tool_end",
+      "label": "Expense record returned",
+      "timestamp": "2026-09-10T00:14:05.000Z",
+      "payload": {
+        "message": "EXP-2048: $8,400, one approver. Secondary approval missing.",
+        "expense_id": "EXP-2048",
+        "amount_usd": 8400,
+        "approvers": 1,
+        "simulated": true
+      },
+      "parent_ids": [
+        "evt-003"
+      ]
+    },
+    {
+      "type": "retrieval",
+      "label": "Approval history",
+      "timestamp": "2026-09-10T00:14:06.000Z",
+      "payload": {
+        "message": "The second approval is absent from the fictional review history.",
+        "document": "approval-history-demo.json",
+        "chunk": 2
+      },
+      "parent_ids": [
+        "evt-004"
+      ]
+    },
+    {
+      "type": "state_transition",
+      "label": "Compare policy and record",
+      "timestamp": "2026-09-10T00:14:07.000Z",
+      "payload": {
+        "message": "The expense exceeds the threshold without secondary approval.",
+        "state": "assessment",
+        "simulated": true
+      },
+      "parent_ids": [
+        "evt-002",
+        "evt-004",
+        "evt-005"
+      ]
+    },
+    {
+      "type": "state_transition",
+      "label": "Flag approval exception",
+      "timestamp": "2026-09-10T00:14:08.000Z",
+      "payload": {
+        "message": "Scripted outcome: flag the missing approval. No financial changes made.",
+        "state": "complete",
+        "simulated": true
+      },
+      "parent_ids": [
+        "evt-006"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+name: aegistrace
+services:
+  audit_service:
+    build: {context: ., dockerfile: audit/Dockerfile}
+    environment:
+      DB_PATH: /data/audit.db
+      AUDIT_WRITE_TOKEN: ${AUDIT_WRITE_TOKEN:?Set a random AUDIT_WRITE_TOKEN in .env}
+      ANCHOR_WRITE_TOKEN: ${ANCHOR_WRITE_TOKEN:?Set ANCHOR_WRITE_TOKEN}
+      ANCHOR_EVERY: ${ANCHOR_EVERY:-10}
+      ANCHOR_SINK_URL: http://anchor_service:8003/anchor
+    networks:
+      agent_net:
+        ipv4_address: 172.29.11.2
+        aliases: [audit_service]
+      audit_net:
+        ipv4_address: 172.29.13.2
+        aliases: [audit_service]
+      anchor_net:
+        ipv4_address: 172.29.16.3
+        aliases: [audit_service]
+    volumes: [audit_data:/data]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -c, "import sqlite3; c=sqlite3.connect('file:/data/audit.db?mode=ro',uri=True); c.execute('SELECT id FROM audit_log LIMIT 1')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  agent_service:
+    build: {context: ., dockerfile: agent/Dockerfile}
+    environment:
+      AUDIT_SINK_URL: http://audit_service:8001/ingest
+      AUDIT_WRITE_TOKEN: ${AUDIT_WRITE_TOKEN:?Set AUDIT_WRITE_TOKEN}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
+      LLM_PROVIDER: ${LLM_PROVIDER:-groq}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3:8b}
+      HTTPS_PROXY: http://groq_proxy:3128
+      HTTP_PROXY: http://groq_proxy:3128
+      NO_PROXY: audit_service,ollama,localhost,127.0.0.1
+      DEMO_MODE: 'false'
+    networks:
+      agent_net:
+        ipv4_address: 172.29.11.3
+        aliases: [agent_service]
+      chat_net:
+        ipv4_address: 172.29.12.3
+        aliases: [agent_service]
+      groq_egress:
+        ipv4_address: 172.29.15.3
+        aliases: [agent_service]
+    depends_on:
+      audit_service: {condition: service_healthy}
+      groq_proxy: {condition: service_started}
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    restart: unless-stopped
+
+  reconstruction_service:
+    build: {context: ., dockerfile: reconstruction/Dockerfile}
+    environment:
+      DB_PATH: /data/audit.db
+      FRONTEND_DIR: /app/frontend
+      DEMO_MODE: 'false'
+      ANCHOR_DATA_DIR: /anchor_data
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
+      AEGIS_API_BASE: ${AEGIS_API_BASE:-}
+    networks:
+      dashboard_net:
+        ipv4_address: 172.29.14.3
+        aliases: [reconstruction_service]
+      audit_net:
+        ipv4_address: 172.29.13.3
+        aliases: [reconstruction_service]
+      anchor_net:
+        ipv4_address: 172.29.16.4
+        aliases: [reconstruction_service]
+    volumes: [audit_data:/data:ro, anchor_data:/anchor_data:ro]
+    ports: ['127.0.0.1:8002:8002']
+    depends_on:
+      audit_service: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health',timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    restart: unless-stopped
+
+  frontend:
+    build: {context: ., dockerfile: frontend/Dockerfile}
+    networks:
+      dashboard_net:
+        ipv4_address: 172.29.14.2
+        aliases: [frontend]
+      chat_net:
+        ipv4_address: 172.29.12.2
+        aliases: [frontend]
+    ports: ['127.0.0.1:3000:3000']
+    depends_on:
+      reconstruction_service: {condition: service_healthy}
+      agent_service: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp, /var/cache/nginx, /var/run]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+
+  # Infrastructure sidecar, not a fourth application service. Agent has no direct internet network.
+  groq_proxy:
+    build: {context: ., dockerfile: deploy/groq-proxy.Dockerfile}
+    networks:
+      groq_egress:
+        ipv4_address: 172.29.15.2
+        aliases: [groq_proxy]
+      internet: {}
+    read_only: true
+    tmpfs: [/tmp, /var/log/squid, /var/spool/squid, /run]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+
+  anchor_service:
+    build: {context: ., dockerfile: anchor/Dockerfile}
+    environment:
+      ANCHOR_DATA_DIR: /anchor_data
+      ANCHOR_WRITE_TOKEN: ${ANCHOR_WRITE_TOKEN:?Set ANCHOR_WRITE_TOKEN}
+    networks:
+      anchor_net:
+        ipv4_address: 172.29.16.2
+        aliases: [anchor_service]
+    volumes: [anchor_data:/anchor_data]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/health',timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    restart: unless-stopped
+
+networks:
+  agent_net:
+    internal: true
+    ipam: {config: [{subnet: 172.29.11.0/24}]}
+  chat_net:
+    internal: true
+    ipam: {config: [{subnet: 172.29.12.0/24}]}
+  audit_net:
+    internal: true
+    ipam: {config: [{subnet: 172.29.13.0/24}]}
+  anchor_net:
+    internal: true
+    ipam: {config: [{subnet: 172.29.16.0/24}]}
+  dashboard_net:
+    ipam: {config: [{subnet: 172.29.14.0/24}]}
+  groq_egress:
+    internal: true
+    ipam: {config: [{subnet: 172.29.15.0/24}]}
+  internet: {}
+volumes:
+  audit_data:
+  anchor_data:

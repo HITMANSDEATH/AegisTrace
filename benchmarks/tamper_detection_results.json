@@ -1,0 +1,10 @@
+{
+  "clean_sessions_count": 100,
+  "false_positive_count": 0,
+  "false_positive_rate": "0/100",
+  "tampered_sessions_count": 100,
+  "detection_count": 100,
+  "detection_rate": "100/100",
+  "localization_count": 100,
+  "localization_accuracy": "100/100"
+}

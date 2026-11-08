@@ -1,0 +1,843 @@
+{
+  "metadata": {
+    "title": "AegisTrace Additional Empirical Systems and Security Evaluation",
+    "timestamp_iso": "2026-09-18T17:15:36Z",
+    "environment": {
+      "os": "Windows 11 Pro (WSL2 Debian 12 containers)",
+      "docker_version": "29.8.0, build 88096ef",
+      "python_host": "3.13.7",
+      "python_container": "3.12",
+      "services": [
+        "aegistrace-agent_service-1",
+        "aegistrace-audit_service-1",
+        "aegistrace-reconstruction_service-1",
+        "aegistrace-frontend-1",
+        "aegistrace-groq_proxy-1"
+      ]
+    }
+  },
+  "experiment_a_multi_entry_tamper_detection": {
+    "random_seed": 1337,
+    "clean_control": {
+      "total_sessions": 30,
+      "false_positives": 0,
+      "false_positive_rate": 0.0,
+      "latency_p50": 2.9439,
+      "latency_p95": 4.1747,
+      "latency_mean": 4.167776666666667
+    },
+    "mutation_conditions": {
+      "A1_two_payload": {
+        "total_sessions": 30,
+        "detected_count": 30,
+        "detection_rate": 1.0,
+        "first_broken_matched_count": 30,
+        "first_broken_match_rate": 1.0,
+        "all_broken_matched_count": 30,
+        "all_broken_match_rate": 1.0,
+        "latency_p50": 3.0451,
+        "latency_p95": 3.7395,
+        "latency_mean": 3.1390766666666665
+      },
+      "A2_five_payload": {
+        "total_sessions": 30,
+        "detected_count": 30,
+        "detection_rate": 1.0,
+        "first_broken_matched_count": 30,
+        "first_broken_match_rate": 1.0,
+        "all_broken_matched_count": 30,
+        "all_broken_match_rate": 1.0,
+        "latency_p50": 3.0707,
+        "latency_p95": 3.7444,
+        "latency_mean": 3.0766833333333334
+      },
+      "A3_payload_plus_timestamp": {
+        "total_sessions": 30,
+        "detected_count": 30,
+        "detection_rate": 1.0,
+        "first_broken_matched_count": 30,
+        "first_broken_match_rate": 1.0,
+        "all_broken_matched_count": 30,
+        "all_broken_match_rate": 1.0,
+        "latency_p50": 3.0081,
+        "latency_p95": 3.4201,
+        "latency_mean": 3.0170166666666662
+      },
+      "A4_payload_plus_metadata": {
+        "total_sessions": 30,
+        "detected_count": 30,
+        "detection_rate": 1.0,
+        "first_broken_matched_count": 30,
+        "first_broken_match_rate": 1.0,
+        "all_broken_matched_count": 30,
+        "all_broken_match_rate": 1.0,
+        "latency_p50": 2.933,
+        "latency_p95": 6.914,
+        "latency_mean": 3.2228566666666665
+      },
+      "A5_adjacent_mutations": {
+        "total_sessions": 30,
+        "detected_count": 30,
+        "detection_rate": 1.0,
+        "first_broken_matched_count": 30,
+        "first_broken_match_rate": 1.0,
+        "all_broken_matched_count": 30,
+        "all_broken_match_rate": 1.0,
+        "latency_p50": 3.1451,
+        "latency_p95": 4.2557,
+        "latency_mean": 3.2249866666666667
+      },
+      "A6_non_adjacent_mutations": {
+        "total_sessions": 30,
+        "detected_count": 30,
+        "detection_rate": 1.0,
+        "first_broken_matched_count": 30,
+        "first_broken_match_rate": 1.0,
+        "all_broken_matched_count": 30,
+        "all_broken_match_rate": 1.0,
+        "latency_p50": 3.0761,
+        "latency_p95": 3.6642,
+        "latency_mean": 3.1180533333333336
+      }
+    }
+  },
+  "experiment_b_bearer_token_compromise_and_forgery": {
+    "cases": [
+      {
+        "case_id": "B1a",
+        "description": "Duplicate sequence number via top-level schema field ('sequence_number': 2)",
+        "http_status": 422,
+        "response_body": "{\"detail\":[{\"type\":\"extra_forbidden\",\"loc\":[\"body\",\"sequence_number\"],\"msg\":\"Extra inputs are not permitted\",\"input\":2}]}",
+        "accepted": false,
+        "notes": "Rejected by Pydantic extra='forbid' validation",
+        "inserted": false,
+        "verifier_verdict": "N/A (Request Rejected by Sink)",
+        "distinguished_from_legit": true
+      },
+      {
+        "case_id": "B1b",
+        "description": "Duplicate sequence number simulated inside payload ('step': 2)",
+        "http_status": 200,
+        "response_body": "{\"status\":\"recorded\"}",
+        "accepted": true,
+        "notes": "Accepted: Audit service does not inspect payload internal step counters",
+        "inserted": true,
+        "verifier_verdict": "Accepted (chain_intact: True)",
+        "distinguished_from_legit": false
+      },
+      {
+        "case_id": "B2",
+        "description": "Old sequence / past timestamp (timestamp < preceding entry)",
+        "http_status": 200,
+        "response_body": "{\"status\":\"recorded\"}",
+        "accepted": true,
+        "notes": "Accepted: Sink has no timestamp monotonicity check",
+        "inserted": true,
+        "verifier_verdict": "Accepted (chain_intact: True)",
+        "distinguished_from_legit": false
+      },
+      {
+        "case_id": "B3",
+        "description": "Out-of-order sequence jump ('step': 999, large timestamp jump)",
+        "http_status": 200,
+        "response_body": "{\"status\":\"recorded\"}",
+        "accepted": true,
+        "notes": "Accepted: Hash chaining only binds preceding hash, not monotonic time or step counters",
+        "inserted": true,
+        "verifier_verdict": "Accepted (chain_intact: True)",
+        "distinguished_from_legit": false
+      },
+      {
+        "case_id": "B4",
+        "description": "Next sequence event with forged adversarial payload",
+        "http_status": 200,
+        "response_body": "{\"status\":\"recorded\"}",
+        "accepted": true,
+        "notes": "Accepted: Token grants unrestricted forward append capability",
+        "inserted": true,
+        "verifier_verdict": "Accepted (chain_intact: True)",
+        "distinguished_from_legit": false
+      },
+      {
+        "case_id": "B5a",
+        "description": "Forged event_type with invalid enum value ('admin_privilege_grant')",
+        "http_status": 422,
+        "response_body": "{\"detail\":[{\"type\":\"literal_error\",\"loc\":[\"body\",\"event_type\"],\"msg\":\"Input should be 'retrieval', 'state_transition', 'tool_start' or 'tool_end'\",\"input\":\"admin_privilege_grant\",\"ctx\":{\"expected\":\"'r",
+        "accepted": false,
+        "notes": "Rejected: Schema enforces Literal['retrieval','state_transition','tool_start','tool_end']",
+        "inserted": false,
+        "verifier_verdict": "N/A (Request Rejected by Sink)",
+        "distinguished_from_legit": true
+      },
+      {
+        "case_id": "B5b",
+        "description": "Forged event_type violating state machine grammar (consecutive tool_end)",
+        "http_status": 200,
+        "response_body": "{\"status\":\"recorded\"}",
+        "accepted": true,
+        "notes": "Accepted: Audit service does not enforce agent state-machine grammar",
+        "inserted": true,
+        "verifier_verdict": "Accepted (chain_intact: True)",
+        "distinguished_from_legit": false
+      },
+      {
+        "case_id": "B6",
+        "description": "Forged metadata injection (_aegis envelope in payload spoofing session_id)",
+        "http_status": 200,
+        "response_body": "{\"status\":\"recorded\"}",
+        "accepted": true,
+        "notes": "Accepted at HTTP layer, but sink unconditionally overwrites _aegis with server-derived values",
+        "inserted": true,
+        "verifier_verdict": "Accepted (chain_intact: True)",
+        "distinguished_from_legit": false
+      },
+      {
+        "case_id": "B7",
+        "description": "Cross-session forgery: submitting events to an arbitrary/unrelated session ID",
+        "http_status": 200,
+        "response_body": "{\"status\":\"recorded\"}",
+        "accepted": true,
+        "notes": "Accepted: Write token is system-global; no per-session access control exists",
+        "inserted": true,
+        "verifier_verdict": "Accepted (chain_intact: True)",
+        "distinguished_from_legit": false
+      }
+    ],
+    "base_session_verification": {
+      "session_id": "exp-b-session-001",
+      "entry_count": 9,
+      "chain_intact": true,
+      "broken_entry_ids": [],
+      "ok": true,
+      "checked": 9,
+      "firstBroken": null,
+      "errors": [],
+      "recalculated": {
+        "evt-001": "7399efb443c4a904214069bbf7bdd488d71e67e3f5452d1086e9114256298a9f",
+        "evt-002": "75ebf7e878a055238d4a85c0973a71e5184dfccfc968baa691eadfe962069c44",
+        "evt-003": "a48eda3f0933fc70a9c7aeee110cfb106162bba356c63e23a0a2925447872cb2",
+        "evt-004": "8175752f6e11d7fcf4615114081d3896bd53b4240e92aabed8a17133d9fad3d0",
+        "evt-005": "4f3818ef3b1d9f6a419ea2d9650f93f5ac9278ffcbc6f7dba4fefd01651fe501",
+        "evt-006": "aaf8d0f379116502411eaabdaa0927a58930ed47e36c7e8769e5564dcd273024",
+        "evt-007": "6a57a8585aad5139629d42585de7395b90646a87e5f1a8a9df3dacaac8f86ee3",
+        "evt-008": "17aee84e39b961ad060a8a515c663213136a23d8fd02333ee5dc6c42b17c6d35",
+        "evt-009": "b4c5cf7fa62e30fd15baab807ffd3bebdd1d92827cb6ce546efca18444ed3333"
+      },
+      "durationMs": 0.24650099999234953
+    },
+    "other_session_verification": {
+      "session_id": "exp-b-arbitrary-victim-002",
+      "entry_count": 1,
+      "chain_intact": true,
+      "broken_entry_ids": [],
+      "ok": true,
+      "checked": 1,
+      "firstBroken": null,
+      "errors": [],
+      "recalculated": {
+        "evt-001": "421835fd56c92cb1b85dea9a563c847fc6efd4c3764bbf3402cee9ddfcb51cd0"
+      },
+      "durationMs": 0.059219000036137004
+    },
+    "b6_sanitized_aegis_envelope": {
+      "event_type": "state_transition",
+      "schema_version": 1,
+      "sensitive_action_flag": false,
+      "session_id": "exp-b-session-001"
+    }
+  },
+  "experiment_c_concurrent_ingestion_and_load": {
+    "concurrency_summaries": {
+      "c_1": {
+        "concurrency_level": 1,
+        "workers": 1,
+        "events_per_worker": 100,
+        "total_requested": 100,
+        "accepted_count": 100,
+        "rejected_count": 0,
+        "db_locked_count (503)": 0,
+        "timeouts_count": 0,
+        "other_errors_count": 0,
+        "total_duration_sec": 0.493,
+        "throughput_events_per_sec": 202.69,
+        "latency_p50_ms": 4.198,
+        "latency_p95_ms": 5.212,
+        "latency_p99_ms": 23.611,
+        "latency_mean_ms": 4.435,
+        "sessions_count": 1,
+        "sessions_verified_intact": 1,
+        "sessions_with_verification_failure": 0,
+        "actual_entries_stored_total": 100,
+        "missing_entries": 0
+      },
+      "c_5": {
+        "concurrency_level": 5,
+        "workers": 5,
+        "events_per_worker": 100,
+        "total_requested": 500,
+        "accepted_count": 500,
+        "rejected_count": 0,
+        "db_locked_count (503)": 0,
+        "timeouts_count": 0,
+        "other_errors_count": 0,
+        "total_duration_sec": 2.098,
+        "throughput_events_per_sec": 238.29,
+        "latency_p50_ms": 5.059,
+        "latency_p95_ms": 37.652,
+        "latency_p99_ms": 334.381,
+        "latency_mean_ms": 15.363,
+        "sessions_count": 5,
+        "sessions_verified_intact": 5,
+        "sessions_with_verification_failure": 0,
+        "actual_entries_stored_total": 500,
+        "missing_entries": 0
+      },
+      "c_10": {
+        "concurrency_level": 10,
+        "workers": 10,
+        "events_per_worker": 100,
+        "total_requested": 1000,
+        "accepted_count": 1000,
+        "rejected_count": 0,
+        "db_locked_count (503)": 0,
+        "timeouts_count": 0,
+        "other_errors_count": 0,
+        "total_duration_sec": 3.739,
+        "throughput_events_per_sec": 267.48,
+        "latency_p50_ms": 6.759,
+        "latency_p95_ms": 107.94,
+        "latency_p99_ms": 633.306,
+        "latency_mean_ms": 30.062,
+        "sessions_count": 10,
+        "sessions_verified_intact": 10,
+        "sessions_with_verification_failure": 0,
+        "actual_entries_stored_total": 1000,
+        "missing_entries": 0
+      },
+      "c_25": {
+        "concurrency_level": 25,
+        "workers": 25,
+        "events_per_worker": 100,
+        "total_requested": 2500,
+        "accepted_count": 2498,
+        "rejected_count": 0,
+        "db_locked_count (503)": 2,
+        "timeouts_count": 0,
+        "other_errors_count": 0,
+        "total_duration_sec": 8.433,
+        "throughput_events_per_sec": 296.23,
+        "latency_p50_ms": 7.808,
+        "latency_p95_ms": 333.45,
+        "latency_p99_ms": 1063.474,
+        "latency_mean_ms": 69.543,
+        "sessions_count": 25,
+        "sessions_verified_intact": 25,
+        "sessions_with_verification_failure": 0,
+        "actual_entries_stored_total": 2498,
+        "missing_entries": 0
+      },
+      "c_50": {
+        "concurrency_level": 50,
+        "workers": 50,
+        "events_per_worker": 100,
+        "total_requested": 5000,
+        "accepted_count": 5000,
+        "rejected_count": 0,
+        "db_locked_count (503)": 0,
+        "timeouts_count": 0,
+        "other_errors_count": 0,
+        "total_duration_sec": 16.569,
+        "throughput_events_per_sec": 301.77,
+        "latency_p50_ms": 39.078,
+        "latency_p95_ms": 748.249,
+        "latency_p99_ms": 1765.039,
+        "latency_mean_ms": 140.652,
+        "sessions_count": 50,
+        "sessions_verified_intact": 50,
+        "sessions_with_verification_failure": 0,
+        "actual_entries_stored_total": 5000,
+        "missing_entries": 0
+      }
+    },
+    "verification_summary": {
+      "total_sessions_tested": 91,
+      "sessions_intact": 91,
+      "verification_errors": []
+    }
+  },
+  "experiment_d_bounded_queue_pressure_and_overflow": {
+    "part1_normal_sink": [
+      {
+        "burst_size": 100,
+        "enqueued_count": 100,
+        "dropped_count": 0,
+        "drop_rate": 0.0,
+        "max_queue_depth_seen": 100,
+        "submit_time_ms": 0.249,
+        "submit_latency_per_event_us": 2.49,
+        "drain_time_sec": 1.012,
+        "caller_blocked": false,
+        "actual_db_entries": 100,
+        "chain_intact": true
+      },
+      {
+        "burst_size": 512,
+        "enqueued_count": 512,
+        "dropped_count": 0,
+        "drop_rate": 0.0,
+        "max_queue_depth_seen": 511,
+        "submit_time_ms": 8.441,
+        "submit_latency_per_event_us": 16.49,
+        "drain_time_sec": 4.862,
+        "caller_blocked": false,
+        "actual_db_entries": 512,
+        "chain_intact": true
+      },
+      {
+        "burst_size": 513,
+        "enqueued_count": 512,
+        "dropped_count": 1,
+        "drop_rate": 0.001949317738791423,
+        "max_queue_depth_seen": 512,
+        "submit_time_ms": 5.162,
+        "submit_latency_per_event_us": 10.06,
+        "drain_time_sec": 4.869,
+        "caller_blocked": false,
+        "actual_db_entries": 512,
+        "chain_intact": true
+      },
+      {
+        "burst_size": 1000,
+        "enqueued_count": 512,
+        "dropped_count": 488,
+        "drop_rate": 0.488,
+        "max_queue_depth_seen": 512,
+        "submit_time_ms": 3.704,
+        "submit_latency_per_event_us": 3.7,
+        "drain_time_sec": 4.817,
+        "caller_blocked": false,
+        "actual_db_entries": 512,
+        "chain_intact": true
+      }
+    ],
+    "part2_paused_sink": [
+      {
+        "burst_size": 100,
+        "enqueued_count": 100,
+        "dropped_count": 0,
+        "drop_rate": 0.0,
+        "queue_maxsize": 512,
+        "received_by_sink_count": 100,
+        "submit_time_ms": 0.244,
+        "median_event_call_us": 1.5,
+        "p95_event_call_us": 2.99,
+        "caller_blocked": false
+      },
+      {
+        "burst_size": 512,
+        "enqueued_count": 512,
+        "dropped_count": 0,
+        "drop_rate": 0.0,
+        "queue_maxsize": 512,
+        "received_by_sink_count": 512,
+        "submit_time_ms": 3.394,
+        "median_event_call_us": 1.18,
+        "p95_event_call_us": 1.5,
+        "caller_blocked": false
+      },
+      {
+        "burst_size": 513,
+        "enqueued_count": 512,
+        "dropped_count": 1,
+        "drop_rate": 0.001949317738791423,
+        "queue_maxsize": 512,
+        "received_by_sink_count": 512,
+        "submit_time_ms": 0.715,
+        "median_event_call_us": 1.02,
+        "p95_event_call_us": 1.79,
+        "caller_blocked": false
+      },
+      {
+        "burst_size": 1000,
+        "enqueued_count": 512,
+        "dropped_count": 488,
+        "drop_rate": 0.488,
+        "queue_maxsize": 512,
+        "received_by_sink_count": 512,
+        "submit_time_ms": 1.367,
+        "median_event_call_us": 1.14,
+        "p95_event_call_us": 1.49,
+        "caller_blocked": false
+      }
+    ],
+    "part3_saturated_agent_turn": {
+      "queue_was_full": true,
+      "chat_status_code": 200,
+      "agent_succeeded": true,
+      "chat_latency_ms": 4.629,
+      "agent_turn_id": "turn-364efa5088fa4fb4b5e68c758c2147a7",
+      "error_leaked_to_client": false,
+      "behavior": "Agent turn succeeded with normal latency; audit events silently dropped via fail-open non-blocking queue.Full catch"
+    }
+  },
+  "experiment_e_audit_sink_downtime_and_recovery": {
+    "session_id": "exp-e-downtime-session",
+    "outage_duration_sec": 3.02,
+    "pre_outage_turns": {
+      "submitted": 3,
+      "stored_in_db": 3,
+      "status": "All successfully ingested"
+    },
+    "during_outage_turns": {
+      "submitted": 5,
+      "agent_http_status_codes": [
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "agent_failed": false,
+      "stored_in_db": 0,
+      "permanently_lost": 5,
+      "behavior": "Agent /chat succeeded normally; audit events permanently dropped in worker thread (httpx.ConnectError silently swallowed)"
+    },
+    "post_outage_turns": {
+      "submitted": 3,
+      "stored_in_db": 3,
+      "status": "Resumed normal ingestion after sink restart"
+    },
+    "verification_result": {
+      "chain_intact": true,
+      "entry_count": 24,
+      "broken_entry_ids": [],
+      "security_analysis": "Chain verifies as intact because post-recovery events chained to the last recorded pre-outage hash. Gaps in conversational history are undetectable by hash chaining alone."
+    },
+    "all_turns": [
+      {
+        "turn": 1,
+        "phase": "pre_outage",
+        "status": 200,
+        "latency_ms": 4.547,
+        "response": {
+          "response": "Fake LLM response",
+          "event_type": "state_transition",
+          "sensitive_action_flag": false,
+          "turn_id": "turn-1b2ecd88ea234a79b265994b16878cae"
+        },
+        "events_stored_in_db": true
+      },
+      {
+        "turn": 2,
+        "phase": "pre_outage",
+        "status": 200,
+        "latency_ms": 1.712,
+        "response": {
+          "response": "Fake LLM response",
+          "event_type": "state_transition",
+          "sensitive_action_flag": false,
+          "turn_id": "turn-9b5f5ac2d70842c7829467ff6cd081ab"
+        },
+        "events_stored_in_db": true
+      },
+      {
+        "turn": 3,
+        "phase": "pre_outage",
+        "status": 200,
+        "latency_ms": 1.866,
+        "response": {
+          "response": "Fake LLM response",
+          "event_type": "state_transition",
+          "sensitive_action_flag": false,
+          "turn_id": "turn-6798b8ebec9c45a7b3fcc677d8017436"
+        },
+        "events_stored_in_db": true
+      },
+      {
+        "turn": 4,
+        "phase": "during_outage",
+        "status": 200,
+        "latency_ms": 4.542,
+        "response": {
+          "response": "Fake LLM response during sink outage",
+          "event_type": "state_transition",
+          "sensitive_action_flag": false,
+          "turn_id": "turn-63ce2e1500e44c3682146e6d6891c019"
+        },
+        "events_stored_in_db": false
+      },
+      {
+        "turn": 5,
+        "phase": "during_outage",
+        "status": 200,
+        "latency_ms": 2.351,
+        "response": {
+          "response": "Fake LLM response during sink outage",
+          "event_type": "state_transition",
+          "sensitive_action_flag": false,
+          "turn_id": "turn-c78e300830fa49fcb12cbc7a8333fe84"
+        },
+        "events_stored_in_db": false
+      },
+      {
+        "turn": 6,
+        "phase": "during_outage",
+        "status": 200,
+        "latency_ms": 2.956,
+        "response": {
+          "response": "Fake LLM response during sink outage",
+          "event_type": "state_transition",
+          "sensitive_action_flag": false,
+          "turn_id": "turn-0e54320757c74d27b88e99f138ea7a4d"
+        },
+        "events_stored_in_db": false
+      },
+      {
+        "turn": 7,
+        "phase": "during_outage",
+        "status": 200,
+        "latency_ms": 2.648,
+        "response": {
+          "response": "Fake LLM response during sink outage",
+          "event_type": "state_transition",
+          "sensitive_action_flag": false,
+          "turn_id": "turn-e609bf9f342f41a7b742bb36a91114d3"
+        },
+        "events_stored_in_db": false
+      },
+      {
+        "turn": 8,
+        "phase": "during_outage",
+        "status": 200,
+        "latency_ms": 2.836,
+        "response": {
+          "response": "Fake LLM response during sink outage",
+          "event_type": "state_transition",
+          "sensitive_action_flag": false,
+          "turn_id": "turn-5c70ff2f111d439e88e063f21b0e6e02"
+        },
+        "events_stored_in_db": false
+      },
+      {
+        "turn": 9,
+        "phase": "post_outage",
+        "status": 200,
+        "latency_ms": 8.054,
+        "response": {
+          "response": "Fake LLM response after recovery",
+          "event_type": "state_transition",
+          "sensitive_action_flag": false,
+          "turn_id": "turn-78917d792db247fea1573de6500fbe1e"
+        },
+        "events_stored_in_db": true
+      },
+      {
+        "turn": 10,
+        "phase": "post_outage",
+        "status": 200,
+        "latency_ms": 8.765,
+        "response": {
+          "response": "Fake LLM response after recovery",
+          "event_type": "state_transition",
+          "sensitive_action_flag": false,
+          "turn_id": "turn-ce209cf6d84c406dbae0aea479f1b2b2"
+        },
+        "events_stored_in_db": true
+      },
+      {
+        "turn": 11,
+        "phase": "post_outage",
+        "status": 200,
+        "latency_ms": 5.279,
+        "response": {
+          "response": "Fake LLM response after recovery",
+          "event_type": "state_transition",
+          "sensitive_action_flag": false,
+          "turn_id": "turn-698454838e4646dfadcb005d58506e86"
+        },
+        "events_stored_in_db": true
+      }
+    ],
+    "stored_db_rows": [
+      {
+        "id": 34432,
+        "event_type": "state_transition",
+        "turn_id": "turn-1b2ecd88ea234a79b265994b16878cae",
+        "label": "User instruction",
+        "msg": "Pre-outage turn 1"
+      },
+      {
+        "id": 34433,
+        "event_type": "state_transition",
+        "turn_id": "turn-1b2ecd88ea234a79b265994b16878cae",
+        "label": "Message classified",
+        "msg": "casual"
+      },
+      {
+        "id": 34434,
+        "event_type": "state_transition",
+        "turn_id": "turn-1b2ecd88ea234a79b265994b16878cae",
+        "label": "Preparing response",
+        "msg": "Tools processed; preparing a response."
+      },
+      {
+        "id": 34435,
+        "event_type": "state_transition",
+        "turn_id": "turn-1b2ecd88ea234a79b265994b16878cae",
+        "label": "Assistant response",
+        "msg": "Fake LLM response"
+      },
+      {
+        "id": 34436,
+        "event_type": "state_transition",
+        "turn_id": "turn-9b5f5ac2d70842c7829467ff6cd081ab",
+        "label": "User instruction",
+        "msg": "Pre-outage turn 2"
+      },
+      {
+        "id": 34437,
+        "event_type": "state_transition",
+        "turn_id": "turn-9b5f5ac2d70842c7829467ff6cd081ab",
+        "label": "Message classified",
+        "msg": "casual"
+      },
+      {
+        "id": 34438,
+        "event_type": "state_transition",
+        "turn_id": "turn-9b5f5ac2d70842c7829467ff6cd081ab",
+        "label": "Preparing response",
+        "msg": "Tools processed; preparing a response."
+      },
+      {
+        "id": 34439,
+        "event_type": "state_transition",
+        "turn_id": "turn-9b5f5ac2d70842c7829467ff6cd081ab",
+        "label": "Assistant response",
+        "msg": "Fake LLM response"
+      },
+      {
+        "id": 34440,
+        "event_type": "state_transition",
+        "turn_id": "turn-6798b8ebec9c45a7b3fcc677d8017436",
+        "label": "User instruction",
+        "msg": "Pre-outage turn 3"
+      },
+      {
+        "id": 34441,
+        "event_type": "state_transition",
+        "turn_id": "turn-6798b8ebec9c45a7b3fcc677d8017436",
+        "label": "Message classified",
+        "msg": "casual"
+      },
+      {
+        "id": 34442,
+        "event_type": "state_transition",
+        "turn_id": "turn-6798b8ebec9c45a7b3fcc677d8017436",
+        "label": "Preparing response",
+        "msg": "Tools processed; preparing a response."
+      },
+      {
+        "id": 34443,
+        "event_type": "state_transition",
+        "turn_id": "turn-6798b8ebec9c45a7b3fcc677d8017436",
+        "label": "Assistant response",
+        "msg": "Fake LLM response"
+      },
+      {
+        "id": 34444,
+        "event_type": "state_transition",
+        "turn_id": "turn-78917d792db247fea1573de6500fbe1e",
+        "label": "User instruction",
+        "msg": "Post-outage turn 9"
+      },
+      {
+        "id": 34445,
+        "event_type": "state_transition",
+        "turn_id": "turn-78917d792db247fea1573de6500fbe1e",
+        "label": "Message classified",
+        "msg": "casual"
+      },
+      {
+        "id": 34446,
+        "event_type": "state_transition",
+        "turn_id": "turn-78917d792db247fea1573de6500fbe1e",
+        "label": "Preparing response",
+        "msg": "Tools processed; preparing a response."
+      },
+      {
+        "id": 34447,
+        "event_type": "state_transition",
+        "turn_id": "turn-78917d792db247fea1573de6500fbe1e",
+        "label": "Assistant response",
+        "msg": "Fake LLM response after recovery"
+      },
+      {
+        "id": 34448,
+        "event_type": "state_transition",
+        "turn_id": "turn-ce209cf6d84c406dbae0aea479f1b2b2",
+        "label": "User instruction",
+        "msg": "Post-outage turn 10"
+      },
+      {
+        "id": 34449,
+        "event_type": "state_transition",
+        "turn_id": "turn-ce209cf6d84c406dbae0aea479f1b2b2",
+        "label": "Message classified",
+        "msg": "casual"
+      },
+      {
+        "id": 34450,
+        "event_type": "state_transition",
+        "turn_id": "turn-ce209cf6d84c406dbae0aea479f1b2b2",
+        "label": "Preparing response",
+        "msg": "Tools processed; preparing a response."
+      },
+      {
+        "id": 34451,
+        "event_type": "state_transition",
+        "turn_id": "turn-ce209cf6d84c406dbae0aea479f1b2b2",
+        "label": "Assistant response",
+        "msg": "Fake LLM response after recovery"
+      },
+      {
+        "id": 34452,
+        "event_type": "state_transition",
+        "turn_id": "turn-698454838e4646dfadcb005d58506e86",
+        "label": "User instruction",
+        "msg": "Post-outage turn 11"
+      },
+      {
+        "id": 34453,
+        "event_type": "state_transition",
+        "turn_id": "turn-698454838e4646dfadcb005d58506e86",
+        "label": "Message classified",
+        "msg": "casual"
+      },
+      {
+        "id": 34454,
+        "event_type": "state_transition",
+        "turn_id": "turn-698454838e4646dfadcb005d58506e86",
+        "label": "Preparing response",
+        "msg": "Tools processed; preparing a response."
+      },
+      {
+        "id": 34455,
+        "event_type": "state_transition",
+        "turn_id": "turn-698454838e4646dfadcb005d58506e86",
+        "label": "Assistant response",
+        "msg": "Fake LLM response after recovery"
+      }
+    ]
+  },
+  "experiment_f_malformed_event_and_schema_validation": {
+    "total_test_cases": 20,
+    "passed_test_cases": 20,
+    "failed_test_cases": 0,
+    "control_accepted": 1,
+    "rejected_invalid_payloads": 19,
+    "rejection_accuracy_pct": 100.0,
+    "db_stored_records_count": 1,
+    "zero_malformed_records_in_db": true,
+    "timestamp_unix": 1789751694.8315494
+  }
+}

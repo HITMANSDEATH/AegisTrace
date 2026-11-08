@@ -1,0 +1,172 @@
+{
+  "cases": [
+    {
+      "case_id": "B1a",
+      "description": "Duplicate sequence number via top-level schema field ('sequence_number': 2)",
+      "http_status": 422,
+      "response_body": "{\"detail\":[{\"type\":\"extra_forbidden\",\"loc\":[\"body\",\"sequence_number\"],\"msg\":\"Extra inputs are not permitted\",\"input\":2}]}",
+      "accepted": false,
+      "notes": "Rejected by Pydantic extra='forbid' validation",
+      "inserted": false,
+      "verifier_verdict": "N/A (Request Rejected by Sink)",
+      "distinguished_from_legit": true
+    },
+    {
+      "case_id": "B1b",
+      "description": "Duplicate sequence number simulated inside payload ('step': 2)",
+      "http_status": 200,
+      "response_body": "{\"status\":\"recorded\"}",
+      "accepted": true,
+      "notes": "Accepted: Audit service does not inspect payload internal step counters",
+      "inserted": true,
+      "verifier_verdict": "Accepted (chain_intact: True)",
+      "distinguished_from_legit": false
+    },
+    {
+      "case_id": "B2",
+      "description": "Old sequence / past timestamp (timestamp < preceding entry)",
+      "http_status": 200,
+      "response_body": "{\"status\":\"recorded\"}",
+      "accepted": true,
+      "notes": "Accepted: Sink has no timestamp monotonicity check",
+      "inserted": true,
+      "verifier_verdict": "Accepted (chain_intact: True)",
+      "distinguished_from_legit": false
+    },
+    {
+      "case_id": "B3",
+      "description": "Out-of-order sequence jump ('step': 999, large timestamp jump)",
+      "http_status": 200,
+      "response_body": "{\"status\":\"recorded\"}",
+      "accepted": true,
+      "notes": "Accepted: Hash chaining only binds preceding hash, not monotonic time or step counters",
+      "inserted": true,
+      "verifier_verdict": "Accepted (chain_intact: True)",
+      "distinguished_from_legit": false
+    },
+    {
+      "case_id": "B4",
+      "description": "Next sequence event with forged adversarial payload",
+      "http_status": 200,
+      "response_body": "{\"status\":\"recorded\"}",
+      "accepted": true,
+      "notes": "Accepted: Token grants unrestricted forward append capability",
+      "inserted": true,
+      "verifier_verdict": "Accepted (chain_intact: True)",
+      "distinguished_from_legit": false
+    },
+    {
+      "case_id": "B5a",
+      "description": "Forged event_type with invalid enum value ('admin_privilege_grant')",
+      "http_status": 422,
+      "response_body": "{\"detail\":[{\"type\":\"literal_error\",\"loc\":[\"body\",\"event_type\"],\"msg\":\"Input should be 'retrieval', 'state_transition', 'tool_start' or 'tool_end'\",\"input\":\"admin_privilege_grant\",\"ctx\":{\"expected\":\"'r",
+      "accepted": false,
+      "notes": "Rejected: Schema enforces Literal['retrieval','state_transition','tool_start','tool_end']",
+      "inserted": false,
+      "verifier_verdict": "N/A (Request Rejected by Sink)",
+      "distinguished_from_legit": true
+    },
+    {
+      "case_id": "B5b",
+      "description": "Forged event_type violating state machine grammar (consecutive tool_end)",
+      "http_status": 200,
+      "response_body": "{\"status\":\"recorded\"}",
+      "accepted": true,
+      "notes": "Accepted: Audit service does not enforce agent state-machine grammar",
+      "inserted": true,
+      "verifier_verdict": "Accepted (chain_intact: True)",
+      "distinguished_from_legit": false
+    },
+    {
+      "case_id": "B6",
+      "description": "Forged metadata injection (_aegis envelope in payload spoofing session_id)",
+      "http_status": 200,
+      "response_body": "{\"status\":\"recorded\"}",
+      "accepted": true,
+      "notes": "Accepted at HTTP layer, but sink unconditionally overwrites _aegis with server-derived values",
+      "inserted": true,
+      "verifier_verdict": "Accepted (chain_intact: True)",
+      "distinguished_from_legit": false
+    },
+    {
+      "case_id": "B7",
+      "description": "Cross-session forgery: submitting events to an arbitrary/unrelated session ID",
+      "http_status": 200,
+      "response_body": "{\"status\":\"recorded\"}",
+      "accepted": true,
+      "notes": "Accepted: Write token is system-global; no per-session access control exists",
+      "inserted": true,
+      "verifier_verdict": "Accepted (chain_intact: True)",
+      "distinguished_from_legit": false
+    }
+  ],
+  "base_session_verification": {
+    "session_id": "exp-b-session-001",
+    "entry_count": 9,
+    "chain_intact": true,
+    "broken_entry_ids": [],
+    "ok": true,
+    "checked": 9,
+    "firstBroken": null,
+    "errors": [],
+    "recalculated": {
+      "evt-001": "48af5b726f11d0e60fc69035338d942d01a3192c534521db229f5e7db1fb3517",
+      "evt-002": "a63e615f410493cc8beff0e61f1c7cf6db4e54a6238b22c01028324e1c30008b",
+      "evt-003": "d5036cfecbf1d1086f469019da481c8d2898bff303ce5b1a83730768ac1931a9",
+      "evt-004": "aa5ab928d85a9bcd8bc1d5a0cfe2ec2354ba76df875daf47e4afe143d7c5fd4f",
+      "evt-005": "447ebd082cd9a7803aa13fd7dc96c4e2f35dcb34a75e8313fed563f6f8884905",
+      "evt-006": "8e9bf5ba9d6c16f3832cc01fe77829d6900cb1e6b051136f1bda08ca99d115f4",
+      "evt-007": "a2a9a82af3855136fea5a12eda7dc96bdb620a3789d3d720d291fbcfaaad9c38",
+      "evt-008": "96351df9bbfca8ab5f975c968721395baa63344c4b153aaf98863875fd7a586e",
+      "evt-009": "9886886c7599238fc8f62b0867fe71cd386c6eddae5556a84449ae702ca8888f"
+    },
+    "durationMs": 2.373317998717539,
+    "sequence_check": "full",
+    "sequence_complete": false,
+    "sequence_gaps": [],
+    "missing_events_total": 0,
+    "duplicate_seq": [
+      4,
+      4,
+      4,
+      4,
+      4
+    ],
+    "out_of_order_seq": [],
+    "anchor_status": "no_anchor",
+    "anchored_count": 0,
+    "unanchored_tail_events": 9,
+    "anchor_log_intact": true
+  },
+  "other_session_verification": {
+    "session_id": "exp-b-arbitrary-victim-002",
+    "entry_count": 1,
+    "chain_intact": true,
+    "broken_entry_ids": [],
+    "ok": true,
+    "checked": 1,
+    "firstBroken": null,
+    "errors": [],
+    "recalculated": {
+      "evt-001": "45ba429f5c0ead594aa543651874aef342e8ccdd2daa884a82ecaf26515a3f91"
+    },
+    "durationMs": 0.15466200056835078,
+    "sequence_check": "full",
+    "sequence_complete": true,
+    "sequence_gaps": [],
+    "missing_events_total": 0,
+    "duplicate_seq": [],
+    "out_of_order_seq": [],
+    "anchor_status": "no_anchor",
+    "anchored_count": 0,
+    "unanchored_tail_events": 1,
+    "anchor_log_intact": true
+  },
+  "b6_sanitized_aegis_envelope": {
+    "client_seq": 4,
+    "event_type": "state_transition",
+    "schema_version": 2,
+    "sensitive_action_flag": false,
+    "session_id": "exp-b-session-001"
+  }
+}

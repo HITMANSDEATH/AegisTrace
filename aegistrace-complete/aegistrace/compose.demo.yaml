@@ -1,0 +1,8 @@
+# EXPLICIT SECURITY EXCEPTION: presenter-only mutation of the stored evidence file.
+# Use only with fictional data. Keep ports bound to loopback.
+services:
+  agent_service:
+    environment: {DEMO_MODE: 'true'}
+  reconstruction_service:
+    environment: {DEMO_MODE: 'true'}
+    volumes: [audit_data:/data:rw]

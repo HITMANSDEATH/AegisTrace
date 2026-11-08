@@ -1,0 +1,21 @@
+test_id,category,description,expected_status,actual_status,passed,response_excerpt
+F01_CONTROL_VALID,Control,Baseline compliant event payload,200,200,True,{'status': 'recorded'}
+F02_MISSING_TIMESTAMP,Required Field,Missing required timestamp field,422,422,True,"{'detail': [{'type': 'missing', 'loc': ['body', 'timestamp'], 'msg': 'Field required', 'input': {'event_type': 'state_tr"
+F03_MISSING_EVENT_TYPE,Required Field,Missing required event_type field,422,422,True,"{'detail': [{'type': 'missing', 'loc': ['body', 'event_type'], 'msg': 'Field required', 'input': {'session_id': 'exp-f-s"
+F04_MISSING_SESSION_ID,Required Field,Missing required session_id field,422,422,True,"{'detail': [{'type': 'missing', 'loc': ['body', 'session_id'], 'msg': 'Field required', 'input': {'event_type': 'state_t"
+F05_MISSING_PAYLOAD,Required Field,Missing required payload field,422,422,True,"{'detail': [{'type': 'missing', 'loc': ['body', 'payload'], 'msg': 'Field required', 'input': {'event_type': 'state_tran"
+F06_INVALID_EVENT_TYPE_ENUM,Schema Enum,Unsupported event_type 'malicious_exec',422,422,True,"{'detail': [{'type': 'literal_error', 'loc': ['body', 'event_type'], 'msg': ""Input should be 'retrieval', 'state_transit"
+F07_SESSION_ID_PATH_TRAVERSAL,Regex / Path Traversal,Session ID containing path traversal characters '../etc/passwd',422,422,True,"{'detail': [{'type': 'string_pattern_mismatch', 'loc': ['body', 'session_id'], 'msg': ""String should match pattern '^[A-"
+F08_SESSION_ID_ILLEGAL_CHARS,Regex / Special Chars,Session ID containing spaces and punctuation 'sess ion@123!',422,422,True,"{'detail': [{'type': 'string_pattern_mismatch', 'loc': ['body', 'session_id'], 'msg': ""String should match pattern '^[A-"
+F09_SESSION_ID_EXCESSIVE_LENGTH,Field Length,Session ID length 120 chars exceeding 96-char max pattern,422,422,True,"{'detail': [{'type': 'string_pattern_mismatch', 'loc': ['body', 'session_id'], 'msg': ""String should match pattern '^[A-"
+F10_EXTRA_ROOT_FIELD_FORBIDDEN,Schema Extra Fields,Injected unauthorized root field 'injected_admin' forbidden by extra='forbid',422,422,True,"{'detail': [{'type': 'extra_forbidden', 'loc': ['body', 'injected_admin'], 'msg': 'Extra inputs are not permitted', 'inp"
+F11_STRING_TIMESTAMP,Type Coercion,ISO 8601 string timestamp instead of float,422,422,True,"{'detail': [{'type': 'float_parsing', 'loc': ['body', 'timestamp'], 'msg': 'Input should be a valid number, unable to pa"
+F12_NAN_TIMESTAMP,Non-finite Float,NaN string timestamp rejected by allow_inf_nan=False,422,422,True,"{'detail': [{'type': 'finite_number', 'loc': ['body', 'timestamp'], 'msg': 'Input should be a finite number', 'input': '"
+F13_INFINITY_TIMESTAMP,Non-finite Float,Infinity string timestamp rejected by allow_inf_nan=False,422,422,True,"{'detail': [{'type': 'finite_number', 'loc': ['body', 'timestamp'], 'msg': 'Input should be a finite number', 'input': '"
+F14_NAN_IN_PAYLOAD,Non-finite Float in Payload,NaN inside nested dictionary payload rejected by canonical_json,422,422,True,{'detail': 'payload must be finite JSON under 128 KiB'}
+F15_NON_DICT_PAYLOAD,Payload Type,String payload instead of dict object,422,422,True,"{'detail': [{'type': 'dict_type', 'loc': ['body', 'payload'], 'msg': 'Input should be a valid dictionary', 'input': 'thi"
+F16_OVERSIZED_PAYLOAD_140KIB,Payload Size Limit,"140 KiB payload exceeding strict 128 KiB (131,072 byte) ceiling",422,422,True,{'detail': 'payload must be finite JSON under 128 KiB'}
+F17_MALFORMED_JSON_SYNTAX,Wire Syntax,Truncated / invalid JSON byte stream,422,422,True,"{'detail': [{'type': 'json_invalid', 'loc': ['body', 78], 'msg': 'JSON decode error', 'input': {}, 'ctx': {'error': 'Exp"
+F18_MISSING_AUTH_HEADER,Authentication,Request omitting Authorization header,403,403,True,{'detail': 'forbidden'}
+F19_INVALID_BEARER_TOKEN,Authentication,Forged / invalid bearer token,403,403,True,{'detail': 'forbidden'}
+F20_EMPTY_BEARER_TOKEN,Authentication,Bearer header with empty token,403,403,True,{'detail': 'forbidden'}

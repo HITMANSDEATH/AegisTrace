@@ -1,0 +1,349 @@
+{
+  "session_id": "exp-e-downtime-session",
+  "outage_duration_sec": 3.02,
+  "pre_outage_turns": {
+    "submitted": 3,
+    "stored_in_db": 3,
+    "status": "All successfully ingested"
+  },
+  "during_outage_turns": {
+    "submitted": 5,
+    "agent_http_status_codes": [
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "agent_failed": false,
+    "stored_in_db": 0,
+    "permanently_lost": 5,
+    "behavior": "Agent /chat succeeded normally; audit events permanently dropped in worker thread (httpx.ConnectError silently swallowed)"
+  },
+  "post_outage_turns": {
+    "submitted": 3,
+    "stored_in_db": 3,
+    "status": "Resumed normal ingestion after sink restart"
+  },
+  "verification_result": {
+    "chain_intact": true,
+    "entry_count": 24,
+    "broken_entry_ids": [],
+    "security_analysis": "Chain verifies as intact because post-recovery events chained to the last recorded pre-outage hash. Gaps in conversational history are undetectable by hash chaining alone."
+  },
+  "all_turns": [
+    {
+      "turn": 1,
+      "phase": "pre_outage",
+      "status": 200,
+      "latency_ms": 4.547,
+      "response": {
+        "response": "Fake LLM response",
+        "event_type": "state_transition",
+        "sensitive_action_flag": false,
+        "turn_id": "turn-1b2ecd88ea234a79b265994b16878cae"
+      },
+      "events_stored_in_db": true
+    },
+    {
+      "turn": 2,
+      "phase": "pre_outage",
+      "status": 200,
+      "latency_ms": 1.712,
+      "response": {
+        "response": "Fake LLM response",
+        "event_type": "state_transition",
+        "sensitive_action_flag": false,
+        "turn_id": "turn-9b5f5ac2d70842c7829467ff6cd081ab"
+      },
+      "events_stored_in_db": true
+    },
+    {
+      "turn": 3,
+      "phase": "pre_outage",
+      "status": 200,
+      "latency_ms": 1.866,
+      "response": {
+        "response": "Fake LLM response",
+        "event_type": "state_transition",
+        "sensitive_action_flag": false,
+        "turn_id": "turn-6798b8ebec9c45a7b3fcc677d8017436"
+      },
+      "events_stored_in_db": true
+    },
+    {
+      "turn": 4,
+      "phase": "during_outage",
+      "status": 200,
+      "latency_ms": 4.542,
+      "response": {
+        "response": "Fake LLM response during sink outage",
+        "event_type": "state_transition",
+        "sensitive_action_flag": false,
+        "turn_id": "turn-63ce2e1500e44c3682146e6d6891c019"
+      },
+      "events_stored_in_db": false
+    },
+    {
+      "turn": 5,
+      "phase": "during_outage",
+      "status": 200,
+      "latency_ms": 2.351,
+      "response": {
+        "response": "Fake LLM response during sink outage",
+        "event_type": "state_transition",
+        "sensitive_action_flag": false,
+        "turn_id": "turn-c78e300830fa49fcb12cbc7a8333fe84"
+      },
+      "events_stored_in_db": false
+    },
+    {
+      "turn": 6,
+      "phase": "during_outage",
+      "status": 200,
+      "latency_ms": 2.956,
+      "response": {
+        "response": "Fake LLM response during sink outage",
+        "event_type": "state_transition",
+        "sensitive_action_flag": false,
+        "turn_id": "turn-0e54320757c74d27b88e99f138ea7a4d"
+      },
+      "events_stored_in_db": false
+    },
+    {
+      "turn": 7,
+      "phase": "during_outage",
+      "status": 200,
+      "latency_ms": 2.648,
+      "response": {
+        "response": "Fake LLM response during sink outage",
+        "event_type": "state_transition",
+        "sensitive_action_flag": false,
+        "turn_id": "turn-e609bf9f342f41a7b742bb36a91114d3"
+      },
+      "events_stored_in_db": false
+    },
+    {
+      "turn": 8,
+      "phase": "during_outage",
+      "status": 200,
+      "latency_ms": 2.836,
+      "response": {
+        "response": "Fake LLM response during sink outage",
+        "event_type": "state_transition",
+        "sensitive_action_flag": false,
+        "turn_id": "turn-5c70ff2f111d439e88e063f21b0e6e02"
+      },
+      "events_stored_in_db": false
+    },
+    {
+      "turn": 9,
+      "phase": "post_outage",
+      "status": 200,
+      "latency_ms": 8.054,
+      "response": {
+        "response": "Fake LLM response after recovery",
+        "event_type": "state_transition",
+        "sensitive_action_flag": false,
+        "turn_id": "turn-78917d792db247fea1573de6500fbe1e"
+      },
+      "events_stored_in_db": true
+    },
+    {
+      "turn": 10,
+      "phase": "post_outage",
+      "status": 200,
+      "latency_ms": 8.765,
+      "response": {
+        "response": "Fake LLM response after recovery",
+        "event_type": "state_transition",
+        "sensitive_action_flag": false,
+        "turn_id": "turn-ce209cf6d84c406dbae0aea479f1b2b2"
+      },
+      "events_stored_in_db": true
+    },
+    {
+      "turn": 11,
+      "phase": "post_outage",
+      "status": 200,
+      "latency_ms": 5.279,
+      "response": {
+        "response": "Fake LLM response after recovery",
+        "event_type": "state_transition",
+        "sensitive_action_flag": false,
+        "turn_id": "turn-698454838e4646dfadcb005d58506e86"
+      },
+      "events_stored_in_db": true
+    }
+  ],
+  "stored_db_rows": [
+    {
+      "id": 34432,
+      "event_type": "state_transition",
+      "turn_id": "turn-1b2ecd88ea234a79b265994b16878cae",
+      "label": "User instruction",
+      "msg": "Pre-outage turn 1"
+    },
+    {
+      "id": 34433,
+      "event_type": "state_transition",
+      "turn_id": "turn-1b2ecd88ea234a79b265994b16878cae",
+      "label": "Message classified",
+      "msg": "casual"
+    },
+    {
+      "id": 34434,
+      "event_type": "state_transition",
+      "turn_id": "turn-1b2ecd88ea234a79b265994b16878cae",
+      "label": "Preparing response",
+      "msg": "Tools processed; preparing a response."
+    },
+    {
+      "id": 34435,
+      "event_type": "state_transition",
+      "turn_id": "turn-1b2ecd88ea234a79b265994b16878cae",
+      "label": "Assistant response",
+      "msg": "Fake LLM response"
+    },
+    {
+      "id": 34436,
+      "event_type": "state_transition",
+      "turn_id": "turn-9b5f5ac2d70842c7829467ff6cd081ab",
+      "label": "User instruction",
+      "msg": "Pre-outage turn 2"
+    },
+    {
+      "id": 34437,
+      "event_type": "state_transition",
+      "turn_id": "turn-9b5f5ac2d70842c7829467ff6cd081ab",
+      "label": "Message classified",
+      "msg": "casual"
+    },
+    {
+      "id": 34438,
+      "event_type": "state_transition",
+      "turn_id": "turn-9b5f5ac2d70842c7829467ff6cd081ab",
+      "label": "Preparing response",
+      "msg": "Tools processed; preparing a response."
+    },
+    {
+      "id": 34439,
+      "event_type": "state_transition",
+      "turn_id": "turn-9b5f5ac2d70842c7829467ff6cd081ab",
+      "label": "Assistant response",
+      "msg": "Fake LLM response"
+    },
+    {
+      "id": 34440,
+      "event_type": "state_transition",
+      "turn_id": "turn-6798b8ebec9c45a7b3fcc677d8017436",
+      "label": "User instruction",
+      "msg": "Pre-outage turn 3"
+    },
+    {
+      "id": 34441,
+      "event_type": "state_transition",
+      "turn_id": "turn-6798b8ebec9c45a7b3fcc677d8017436",
+      "label": "Message classified",
+      "msg": "casual"
+    },
+    {
+      "id": 34442,
+      "event_type": "state_transition",
+      "turn_id": "turn-6798b8ebec9c45a7b3fcc677d8017436",
+      "label": "Preparing response",
+      "msg": "Tools processed; preparing a response."
+    },
+    {
+      "id": 34443,
+      "event_type": "state_transition",
+      "turn_id": "turn-6798b8ebec9c45a7b3fcc677d8017436",
+      "label": "Assistant response",
+      "msg": "Fake LLM response"
+    },
+    {
+      "id": 34444,
+      "event_type": "state_transition",
+      "turn_id": "turn-78917d792db247fea1573de6500fbe1e",
+      "label": "User instruction",
+      "msg": "Post-outage turn 9"
+    },
+    {
+      "id": 34445,
+      "event_type": "state_transition",
+      "turn_id": "turn-78917d792db247fea1573de6500fbe1e",
+      "label": "Message classified",
+      "msg": "casual"
+    },
+    {
+      "id": 34446,
+      "event_type": "state_transition",
+      "turn_id": "turn-78917d792db247fea1573de6500fbe1e",
+      "label": "Preparing response",
+      "msg": "Tools processed; preparing a response."
+    },
+    {
+      "id": 34447,
+      "event_type": "state_transition",
+      "turn_id": "turn-78917d792db247fea1573de6500fbe1e",
+      "label": "Assistant response",
+      "msg": "Fake LLM response after recovery"
+    },
+    {
+      "id": 34448,
+      "event_type": "state_transition",
+      "turn_id": "turn-ce209cf6d84c406dbae0aea479f1b2b2",
+      "label": "User instruction",
+      "msg": "Post-outage turn 10"
+    },
+    {
+      "id": 34449,
+      "event_type": "state_transition",
+      "turn_id": "turn-ce209cf6d84c406dbae0aea479f1b2b2",
+      "label": "Message classified",
+      "msg": "casual"
+    },
+    {
+      "id": 34450,
+      "event_type": "state_transition",
+      "turn_id": "turn-ce209cf6d84c406dbae0aea479f1b2b2",
+      "label": "Preparing response",
+      "msg": "Tools processed; preparing a response."
+    },
+    {
+      "id": 34451,
+      "event_type": "state_transition",
+      "turn_id": "turn-ce209cf6d84c406dbae0aea479f1b2b2",
+      "label": "Assistant response",
+      "msg": "Fake LLM response after recovery"
+    },
+    {
+      "id": 34452,
+      "event_type": "state_transition",
+      "turn_id": "turn-698454838e4646dfadcb005d58506e86",
+      "label": "User instruction",
+      "msg": "Post-outage turn 11"
+    },
+    {
+      "id": 34453,
+      "event_type": "state_transition",
+      "turn_id": "turn-698454838e4646dfadcb005d58506e86",
+      "label": "Message classified",
+      "msg": "casual"
+    },
+    {
+      "id": 34454,
+      "event_type": "state_transition",
+      "turn_id": "turn-698454838e4646dfadcb005d58506e86",
+      "label": "Preparing response",
+      "msg": "Tools processed; preparing a response."
+    },
+    {
+      "id": 34455,
+      "event_type": "state_transition",
+      "turn_id": "turn-698454838e4646dfadcb005d58506e86",
+      "label": "Assistant response",
+      "msg": "Fake LLM response after recovery"
+    }
+  ]
+}

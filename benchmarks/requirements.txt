@@ -1,0 +1,2 @@
+# Install alongside the application's requirements-dev.txt for research harnesses.
+psutil==7.1.3

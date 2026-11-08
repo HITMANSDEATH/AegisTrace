@@ -1,0 +1,11 @@
+{
+  "total_test_cases": 20,
+  "passed_test_cases": 20,
+  "failed_test_cases": 0,
+  "control_accepted": 1,
+  "rejected_invalid_payloads": 19,
+  "rejection_accuracy_pct": 100.0,
+  "db_stored_records_count": 1,
+  "zero_malformed_records_in_db": true,
+  "timestamp_unix": 1789751694.8315494
+}
