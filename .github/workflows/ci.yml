@@ -64,6 +64,7 @@ jobs:
       - name: JavaScript syntax
         run: |
           for file in "$GITHUB_WORKSPACE"/aegistrace-complete/aegistrace/frontend/*.js "$GITHUB_WORKSPACE"/aegistrace-complete/aegistrace/scripts/*.mjs "$GITHUB_WORKSPACE"/aegistrace-complete/aegistrace/tests/*.mjs; do
+            [ -e "$file" ] || continue
             node --check "$file"
           done
       - name: Mocked frontend API tests
