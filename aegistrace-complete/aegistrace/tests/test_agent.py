@@ -54,6 +54,34 @@ def test_provider_failure_sanitized_and_audited():
     assert events[-1]['payload']['state']=='error'
 
 
+def test_prompt_length_limit_rejected_before_capture(monkeypatch):
+    monkeypatch.setenv('MAX_PROMPT_CHARS','10');events=[]
+    with TestClient(create_app(llm=FakeLLM(),capture=events.append)) as client:
+        response=client.post('/chat',json={'session_id':'limits','message':'x'*11})
+    assert response.status_code==422
+    body=response.json()
+    assert body['error']=='prompt_too_long'
+    assert '10-character' in body['message']
+    assert events==[]
+
+
+def test_llm_timeout_returns_clean_error_and_records(monkeypatch):
+    class SlowLLM:
+        async def ainvoke(self,messages):
+            await asyncio.sleep(1)
+            return SimpleNamespace(content='late')
+    monkeypatch.setenv('LLM_TIMEOUT_SECONDS','0.05');events=[]
+    with TestClient(create_app(llm=SlowLLM(),capture=events.append)) as client:
+        response=client.post('/chat',json={'session_id':'timeout','message':'hello'})
+    assert response.status_code==504
+    body=response.json()
+    assert body['error']=='llm_timeout'
+    assert body['turn_id'].startswith('turn-')
+    assert 'timed out' in body['message']
+    assert 'TimeoutError' not in response.text
+    assert events[-1]['payload']['state']=='error'
+
+
 def test_sink_block_or_failure_does_not_block_chat():
     release=threading.Event();received=[]
     def slow_sink(event):

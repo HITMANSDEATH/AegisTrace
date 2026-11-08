@@ -22,7 +22,7 @@ from .mock_tools import execute_action, retrieve_context
 class ChatBody(BaseModel):
     model_config = ConfigDict(extra='forbid')
     session_id: str = Field(pattern=r'^[A-Za-z0-9_-]{1,96}$')
-    message: str = Field(min_length=1,max_length=1000)
+    message: str = Field(min_length=1)
     @field_validator('message')
     @classmethod
     def nonempty(cls,value):
@@ -77,7 +77,24 @@ class SessionRegistry:
         return result
 
 
+def _env_positive_int(name,default):
+    raw=(os.getenv(name) or str(default)).strip()
+    try: value=int(raw)
+    except ValueError: raise RuntimeError(f'{name} must be a positive integer') from None
+    if value<1: raise RuntimeError(f'{name} must be a positive integer')
+    return value
+
+def _env_positive_float(name,default):
+    raw=(os.getenv(name) or str(default)).strip()
+    try: value=float(raw)
+    except ValueError: raise RuntimeError(f'{name} must be a positive number') from None
+    if not value>0: raise RuntimeError(f'{name} must be a positive number')
+    return value
+
+
 def create_app(*,llm=None,llm_provider=None,capture=None):
+    max_prompt_chars=_env_positive_int('MAX_PROMPT_CHARS',4000)
+    llm_timeout_seconds=_env_positive_float('LLM_TIMEOUT_SECONDS',20)
     owned = capture is None
     handler = capture if capture is not None else AuditCapture()
     @asynccontextmanager
@@ -135,9 +152,9 @@ def create_app(*,llm=None,llm_provider=None,capture=None):
             messages.extend([('human',old['user']),('ai',old['assistant'])])
         messages.append(('human',turn['message']))
         if hasattr(model,'ainvoke'):
-            result = await asyncio.wait_for(model.ainvoke(messages),timeout=25)
+            result = await asyncio.wait_for(model.ainvoke(messages),timeout=llm_timeout_seconds)
         else:
-            result = await asyncio.wait_for(asyncio.to_thread(model.invoke,messages),timeout=25)
+            result = await asyncio.wait_for(asyncio.to_thread(model.invoke,messages),timeout=llm_timeout_seconds)
         content = result if isinstance(result,str) else getattr(result,'content','')
         if not isinstance(content,str) or not content.strip(): raise ValueError('empty provider response')
         emit(turn,'state_transition',{'actor':'assistant','state':'complete','label':'Assistant response','message':content})
@@ -159,6 +176,10 @@ def create_app(*,llm=None,llm_provider=None,capture=None):
 
     @app.post('/chat')
     async def chat(body: ChatBody):
+        if len(body.message)>max_prompt_chars:
+            return JSONResponse(status_code=422,content={
+                'error':'prompt_too_long',
+                'message':f'Message exceeds the {max_prompt_chars}-character limit.'})
         session = registry.acquire(body.session_id)
         try:
             async with session.lock:
@@ -170,6 +191,10 @@ def create_app(*,llm=None,llm_provider=None,capture=None):
                     session.history.append({'user':body.message,'assistant':result['response']})
                     event_type = {'question':'retrieval','request':'tool_start','sensitive_action':'tool_start','casual':'state_transition'}[result['category']]
                     return {'response':result['response'],'event_type':event_type,'sensitive_action_flag':result['sensitive'],'turn_id':turn['turn_id']}
+                except asyncio.TimeoutError:
+                    message = f'The live model timed out after {llm_timeout_seconds:g} seconds. The turn was recorded; check the provider before retrying.'
+                    emit(turn,'state_transition',{'actor':'system','state':'error','label':'Agent timed out','message':message})
+                    return JSONResponse(status_code=504,content={'error':'llm_timeout','message':message,'turn_id':turn['turn_id']})
                 except Exception:
                     message = 'Live agent unavailable. Check the server provider configuration, credentials, connectivity, or rate limit, then retry.'
                     emit(turn,'state_transition',{'actor':'system','state':'error','label':'Agent unavailable','message':message})

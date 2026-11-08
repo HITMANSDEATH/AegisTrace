@@ -36,12 +36,20 @@ def get_llm() -> Any:
             raise ProviderConfigurationError("GROQ_API_KEY is not configured")
         if ChatGroq is None:
             raise ProviderConfigurationError("Groq provider is unavailable")
+        try:
+            timeout = float(os.getenv("LLM_TIMEOUT_SECONDS", "20"))
+        except ValueError:
+            timeout = 20.0
+        if timeout <= 0:
+            timeout = 20.0
         kwargs = {
             "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
             "temperature": 0.3,
             "max_retries": 0,
             "max_tokens": 1024,
-            "timeout": 20,
+            # The agent's wait_for enforces LLM_TIMEOUT_SECONDS; leave the SDK a
+            # small backstop so the timeout is reported as the agent's 504 path.
+            "timeout": timeout + 2,
         }
         # ChatGroq reads the key from its environment, but passing it also
         # makes an injected constructor straightforward to test.

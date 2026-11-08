@@ -41,6 +41,9 @@ services:
       GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3:8b}
+      AGENT_MAX_SESSIONS: ${AGENT_MAX_SESSIONS:-256}
+      MAX_PROMPT_CHARS: ${MAX_PROMPT_CHARS:-4000}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-20}
       HTTPS_PROXY: http://groq_proxy:3128
       HTTP_PROXY: http://groq_proxy:3128
       NO_PROXY: audit_service,ollama,localhost,127.0.0.1
@@ -105,6 +108,11 @@ services:
 
   frontend:
     build: {context: ., dockerfile: frontend/Dockerfile}
+    environment:
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
+      LLM_RATE_LIMIT_PER_MINUTE: ${LLM_RATE_LIMIT_PER_MINUTE:-10}
+      MAX_REQUEST_BODY_BYTES: ${MAX_REQUEST_BODY_BYTES:-131072}
+      TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-}
     networks:
       dashboard_net:
         ipv4_address: 172.29.14.2
@@ -112,7 +120,7 @@ services:
       chat_net:
         ipv4_address: 172.29.12.2
         aliases: [frontend]
-    ports: ['127.0.0.1:3000:3000']
+    ports: ['${BIND_HOST:-127.0.0.1}:${FRONTEND_PORT:-3000}:3000']
     depends_on:
       reconstruction_service: {condition: service_healthy}
       agent_service: {condition: service_healthy}

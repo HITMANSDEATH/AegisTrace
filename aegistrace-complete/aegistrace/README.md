@@ -17,6 +17,44 @@ cp .env.example .env
 
 Set independently generated random values for `AUDIT_WRITE_TOKEN` and `ANCHOR_WRITE_TOKEN` in `.env`. Set `GROQ_API_KEY` there for live inference. Default model: `llama-3.3-70b-versatile`. Credentials never enter the browser. `.env` is excluded from Git and Docker build contexts. An empty/misconfigured Groq key produces a sanitized, recorded `503 live_agent_unavailable`, not a silent mock response. An absent Groq key does not prevent startup or browser-only simulation.
 
+### Environment reference
+
+Compose reads `.env` from this directory. Variables marked “native only” apply to direct `uvicorn` runs; Compose sets the container values explicitly.
+
+| Variable | Default | Used by | Behavior |
+|---|---|---|---|
+| `AUDIT_WRITE_TOKEN` | required | agent, audit | Private bearer token for write-only ingest. Generate independently. |
+| `ANCHOR_WRITE_TOKEN` | required | audit, anchor | Private bearer token for anchor writes. Generate independently. |
+| `ANCHOR_EVERY` | `10` | audit | Checkpoint every N events per session; `0` disables anchoring. |
+| `LLM_PROVIDER` | `groq` | agent | `groq`, `ollama`, or `local` (Ollama alias). No silent fallback. |
+| `GROQ_API_KEY` | empty | agent | Backend-only credential; never exposed to the browser. |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | agent | Groq model identifier. |
+| `OLLAMA_MODEL` | `llama3:8b` | agent | Ollama model identifier. |
+| `AGENT_LLM_PROVIDER` | empty | agent (native only) | Legacy alias used only when `LLM_PROVIDER` is empty. |
+| `OLLAMA_BASE_URL` | `http://ollama:11434` | agent (native only) | Compose fixes this container URL. |
+| `AUDIT_SINK_URL` | `http://audit_service:8001/ingest` | agent (native only) | Compose fixes this container URL. |
+| `ANCHOR_SINK_URL` | `http://anchor_service:8003/anchor` | audit (native only) | Compose fixes this container URL. |
+| `DB_PATH` | `/data/audit.db` | audit, reconstruction (native only) | Compose fixes container paths. Never mounted in the agent. |
+| `ANCHOR_DATA_DIR` | `/anchor_data` | anchor, reconstruction (native only) | Compose fixes container paths. Reconstruction mounts it read-only. |
+| `FRONTEND_DIR` | `/app/frontend` | reconstruction (native only) | Static frontend directory for direct runs. |
+| `AGENT_MAX_SESSIONS` | `256` | agent | In-memory session capacity; excess sessions evict inactive ones. |
+| `DEMO_MODE` | `false` | agent, reconstruction | Native only: Compose pins `false`; demos require `compose.demo.yaml`. |
+| `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` | internal proxy | agent (native only) | Compose fixes the isolated proxy values. |
+| `ALLOWED_ORIGINS` | loopback origins | agent, reconstruction, gateway | Exact comma-separated origins; blank denies cross-origin access. The gateway also uses it for CORS on its own 413/429 responses. |
+| `AEGIS_API_BASE` | empty | reconstruction | Value emitted in `/config.js`; empty means same origin. |
+| `AEGIS_ALLOW_DESTRUCTIVE` | `0` | benchmark scripts | Explicit opt-in for disposable local evidence only. |
+| `BIND_HOST` | `127.0.0.1` | Compose | Host bind address for the gateway. Keep loopback. |
+| `FRONTEND_PORT` | `3000` | Compose | Host port for the gateway. Internal service ports stay unpublished. |
+| `LLM_RATE_LIMIT_PER_MINUTE` | `10` | gateway | Per-real-client-IP limit for `/chat` and `/demo/session`, with burst 5; excess gets `429` JSON. |
+| `MAX_REQUEST_BODY_BYTES` | `131072` | gateway | Larger request bodies get `413` JSON before reaching the agent. |
+| `MAX_PROMPT_CHARS` | `4000` | agent | Longer messages get `422` JSON and produce no audit event. |
+| `LLM_TIMEOUT_SECONDS` | `20` | agent | Bounds the outbound model call; expiry returns `504` JSON after recording an error event. |
+| `TRUSTED_PROXY_CIDR` | empty | gateway | Comma-separated proxy CIDRs allowed to supply `X-Forwarded-For`. Empty disables real-IP handling. Behind a TLS proxy, set the proxy address or Docker network CIDR; never use `0.0.0.0/0`. |
+| `COMPOSE_FILES` | `compose.yaml` | isolation test | Colon-separated Compose files for `tests/docker_isolation.py`. |
+| `CYTOSCAPE_JS` | empty | browser test | Absolute path to a local Cytoscape JS file. |
+
+Internal service ports remain fixed at 8000 (agent), 8001 (audit), 8002 (reconstruction), 8003 (anchor), 3128 (egress proxy), and 11434 (optional Ollama).
+
 ## 2. Start
 
 **Normal, read-only reconstruction:**
@@ -46,6 +84,8 @@ Same-origin routing is the default: leave `AEGIS_API_BASE` empty. For a separate
 5. Stored live evidence remains accessible through the session API. **Reset case** opens a new ID; it does not erase stored backend records. Browser-local Try It Yourself data is not durable backend evidence.
 
 Capture is asynchronous. The UI waits for a terminal recorded event and explicitly reports pending/unavailable evidence rather than inventing a sealed response.
+
+Requests rejected by the gateway (`413`, `429`) or by the agent before a session or turn exists (`422`) never enter the capture path and leave no audit event. The recorded trail covers only requests that reach the agent.
 
 ## 3. Architecture
 
@@ -117,11 +157,14 @@ python -m pytest -q tests ../../benchmarks/tests
 node --test tests/frontend_api.test.mjs
 # Against the actual started Docker deployment:
 python tests/docker_isolation.py
+python tests/limits_smoke.py
 # If using demo overrides:
 COMPOSE_FILES=compose.yaml:compose.demo.yaml python tests/docker_isolation.py
 ```
 
 The isolation test checks direct reconstruction reachability, gateway read denial even with forged forwarding headers, ingest auth, lack of read routes, proxy denials, direct TCP egress, no agent DB mount, and read-only reconstruction.
+
+The limits smoke test sends an oversized body (`413`), an over-limit prompt (`422`), and a request burst (`429`) through the real gateway. It reads `FRONTEND_PORT`, `MAX_REQUEST_BODY_BYTES`, `MAX_PROMPT_CHARS`, and `SMOKE_ORIGIN` (default `http://localhost:3000`) from the environment, so pass the values used by the deployment. The burst intentionally consumes the chat rate budget and may call the live provider a few times.
 
 `tests/e2e_browser.py` runs the real UI through local HTTP services with a fake LLM. It additionally requires Nginx, Playwright/Chromium, and a local Cytoscape 3.26.0 JS file (path supplied with `CYTOSCAPE_JS`). No provider key is required. `docs/e2e-tamper.jpg` is the resulting tested UI.
 
@@ -147,5 +190,7 @@ Historical reports and selected result files live at the repository root. Exclud
 ## Operational boundaries
 
 This is a loopback-only, single-operator implementation, not an authenticated multi-tenant service. Before public deployment add TLS, identity, per-session authorization, quotas, retention policy, backups/checkpoints, and host firewall/DNS controls. Keep one agent worker for ordered capture and in-memory session locking; SQLite uses a local Docker volume, not network storage. A host/Docker administrator is trusted.
+
+When a TLS reverse proxy fronts the gateway, set `TRUSTED_PROXY_CIDR` to that proxy's address or Docker network CIDR. Otherwise all visitors appear as the proxy address and share one rate-limit bucket. Never use `0.0.0.0/0` or an equivalent all-address range: it lets any client spoof `X-Forwarded-For` and choose its own bucket. Keep `BIND_HOST=127.0.0.1` so clients cannot bypass the proxy.
 
 Stop without deleting evidence: `docker compose down`. **`docker compose down -v` deletes evidence volumes**; use only when you deliberately intend to destroy demo data.

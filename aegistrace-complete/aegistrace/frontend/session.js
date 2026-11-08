@@ -312,7 +312,6 @@ function closeInspector(restore=true) { $('inspector').hidden=true;$('drawer-bac
 function moveTimeline(position) { state.position=Math.max(0,Math.min(state.events.length,position));if(!state.events.slice(0,state.position).some(event=>event.id===state.selected)){state.selected=null;closeInspector(false);}renderAll(); }
 async function sendPrompt(text) {
  text=text.trim();if(!text||!['try','live'].includes(state.mode)||state.busy||state.tampered)return;
- if(text.length>1000){notify('Keep the task under 1,000 characters.');return;}
  stopReplay();const target=state;target.busy=true;$('chat-input').value='';
  if(target.mode==='try'){
   note('Generating simulated response and computing local SHA-256 chain…');renderStatus();renderChatView();

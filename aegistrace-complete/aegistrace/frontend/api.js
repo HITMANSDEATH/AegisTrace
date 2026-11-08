@@ -2,6 +2,12 @@
 // config.js supplies the only API base; empty preserves same-origin routing.
 const base = (window.AEGIS_API_BASE || '').trim().replace(/\/+$/, '');
 const unreachable = () => new Error('Backend unreachable: check API URL / CORS.');
+const statusMessages = {
+  413: 'The request is too large. Shorten the message and try again.',
+  422: 'The request was rejected. Check the message and try again.',
+  429: 'Too many requests. Wait a moment and try again.',
+  504: 'The live model timed out. The turn may have been recorded; check the session before retrying.'
+};
 
 async function request(path, options={}, asBlob=false) {
   const controller=new AbortController();
@@ -17,7 +23,7 @@ async function request(path, options={}, asBlob=false) {
     if(asBlob && response.ok)return await response.blob();
     let data;
     try {data=await response.json();} catch {throw unreachable();}
-    if(!response.ok){const error=new Error(data.message||data.error||(typeof data.detail==='string'?data.detail:'Request failed'));error.status=response.status;error.data=data;throw error;}
+    if(!response.ok){const message=(data&&data.message)||(data&&data.error)||(data&&typeof data.detail==='string'&&data.detail)||statusMessages[response.status]||'Request failed';const error=new Error(message);error.status=response.status;error.data=data;throw error;}
     return data;
   } finally {clearTimeout(timer);}
 }

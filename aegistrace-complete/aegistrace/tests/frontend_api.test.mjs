@@ -94,8 +94,8 @@ for (const name of ['config', 'export']) {
     [{ message: 'Friendly message', error: 'code', detail: 'detail' }, 'Friendly message'],
     [{ error: 'error_code', detail: 'detail' }, 'error_code'],
     [{ detail: 'Session missing' }, 'Session missing'],
-    [{ detail: [{ msg: 'Invalid input' }] }, 'Request failed'],
-    [{}, 'Request failed'],
+    [{ detail: [{ msg: 'Invalid input' }] }, 'The request was rejected. Check the message and try again.'],
+    [{}, 'The request was rejected. Check the message and try again.'],
   ]) {
     test(`${name}: JSON error ${message}`, async t => {
       const h = await harness(t, async () => ({
@@ -128,6 +128,23 @@ for (const name of ['config', 'export']) {
       assertTimerCleared(h);
     });
   }
+}
+
+for (const [status, message] of [
+  [413, 'The request is too large. Shorten the message and try again.'],
+  [422, 'The request was rejected. Check the message and try again.'],
+  [429, 'Too many requests. Wait a moment and try again.'],
+  [504, 'The live model timed out. The turn may have been recorded; check the session before retrying.'],
+]) {
+  test(`status ${status}: friendly fallback`, async t => {
+    const h = await harness(t, async () => ({ ok: false, status, json: async () => ({}) }));
+    await assert.rejects(h.api.chat(id, 'Hello'), error => {
+      assert.equal(error.message, message);
+      assert.equal(error.status, status);
+      return true;
+    });
+    assertTimerCleared(h);
+  });
 }
 
 for (const [name, args] of routes) {
